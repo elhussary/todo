@@ -10,4 +10,9 @@ app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
 
 app.use("/api/tasks", taskRoutes);
 
-app.listen(process.env.PORT);
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+

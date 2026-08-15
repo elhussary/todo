@@ -8,11 +8,13 @@ import { Task } from "@/types/api";
 export const App = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/tasks"); // Adjust the URL as needed
+        const response = await fetch("http://localhost:3000/api/tasks");
         const data = await response.json();
         setTasks(data);
       } catch (error) {
@@ -54,24 +56,60 @@ export const App = () => {
 
   const toggleTask = async (id: number) => {
     try {
-      const task = tasks.find((task) => task.id === id);
+      const task = tasks.find((t) => t.id === id);
       if (!task) return;
 
-      const updatedTask = { ...task, completed: !task.completed };
-      await fetch(`http://localhost:3000/api/tasks/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          completed: updatedTask.completed,
-          title: updatedTask.title,
+          title: task.title,
+          completed: !task.completed,
         }),
       });
 
-      setTasks(tasks.map((task) => (task.id === id ? updatedTask : task)));
+      if (response.ok) {
+        const updatedTaskFromDb = await response.json();
+        setTasks(tasks.map((t) => (t.id === id ? updatedTaskFromDb : t)));
+      }
     } catch (error) {
       console.error("Error toggling task:", error);
+    }
+  };
+
+  const startEditing = (task: Task) => {
+    if (task.id) {
+      setEditingTaskId(task.id);
+      setEditingTitle(task.title);
+    }
+  };
+
+  const saveEdit = async (id: number) => {
+    try {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
+
+      const response = await fetch(`http://localhost:3000/api/tasks/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: editingTitle,
+          completed: task.completed,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedTaskFromDb = await response.json();
+        setTasks(tasks.map((t) => (t.id === id ? updatedTaskFromDb : t)));
+        setEditingTaskId(null);
+        setEditingTitle("");
+      }
+    } catch (error) {
+      console.error("Error saving edited task:", error);
     }
   };
 
@@ -81,6 +119,7 @@ export const App = () => {
         <CardHeader>
           <CardTitle>Todo List</CardTitle>
         </CardHeader>
+
         <CardContent>
           <div className="flex space-x-2 mb-4">
             <Input
@@ -99,16 +138,49 @@ export const App = () => {
                 <Checkbox
                   id={`task-${task.id}`}
                   checked={task.completed}
-                  onClick={() => task.id && toggleTask(task.id)}
+                  onCheckedChange={() => task.id && toggleTask(task.id)}
                 />
-                <label
-                  htmlFor={`task-${task.id}`}
-                  className={`flex-grow ${
-                    task.completed ? "line-through text-gray-500" : ""
-                  }`}
-                >
-                  {task.title}
-                </label>
+
+                {editingTaskId === task.id ? (
+                  <>
+                    <Input
+                      type="text"
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      className="flex-grow h-8"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && task.id) saveEdit(task.id);
+                        if (e.key === "Escape") setEditingTaskId(null);
+                      }}
+                    />
+                    <Button
+                      size={"sm"}
+                      variant={"outline"}
+                      onClick={() => task.id && saveEdit(task.id)}
+                    >
+                      Save
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <label
+                      htmlFor={`task-${task.id}`}
+                      className={`flex-grow ${
+                        task.completed ? "line-through text-gray-500" : ""
+                      }`}
+                    >
+                      {task.title}
+                    </label>
+
+                    <Button
+                      variant={"secondary"}
+                      size={"sm"}
+                      onClick={() => startEditing(task)}
+                    >
+                      Edit
+                    </Button>
+                  </>
+                )}
 
                 <Button
                   variant={"destructive"}
