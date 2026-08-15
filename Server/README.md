@@ -38,7 +38,6 @@ This project was created using `bun init` in bun v1.1.27. [Bun](https://bun.sh) 
 
    ```env
    DATABASE_URL="postgresql://<USER>:<PASSWORD>@<HOST>/<DB_NAME>?sslmode=require"
-   PORT=5000
    ```
 
    ![Connect to Database](./image-1.png)
