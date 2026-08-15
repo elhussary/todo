@@ -25,7 +25,8 @@ CREATE TABLE tasks (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+```
 
-![alt text](./image.png)
+![Create the task table](./image.png)
 
-![alt text](./image-1.png)
+![Connect to Database](./image-1.png)
